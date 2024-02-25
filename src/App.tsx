@@ -1,3 +1,4 @@
+import AppEventBlock from './components/AppEventBlock';
 import WindowEventBlock from './components/WindowEventBlock';
 import { AppEventGroup, WindowEvent, useEvents } from './utils';
 
@@ -6,10 +7,9 @@ function App() {
   return (
     <div className='min-w-[320px] min-h-screen w-full flex flex-col p-4'>
       {
-        events.map((event: WindowEvent, i) => {
-          console.log(event.data.title, event.data.app);
+        events.map((event: AppEventGroup, i) => {
           return (
-            <WindowEventBlock key={i} name={event.data.title} startTime={event.start_time.format("h:mm A")} endTime={event.end_time.format("hh:mm:ss")} duration={event.duration} />
+            <AppEventBlock key={i} app={event.app} startTime={event.start_time.format("h:mm A")} duration={event.duration} />
           )
         })
       }

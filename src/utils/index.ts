@@ -46,51 +46,67 @@ async function getEvents(): Promise<WindowEvent[]> {
     });
 }
 
-function dateIsFirstHalf(date: dayjs.Dayjs) {
-    return 0 <= date.minute() && date.minute() <= 29;
+export type AppEventGroup = {
+    app: string;
+    duration: number;
+    start_time: dayjs.Dayjs;
+    end_time: dayjs.Dayjs;
+    events: WindowEvent[];
 }
 
-function groupEvents(events: WindowEvent[]): WindowEvent[][] {
+function mergeSameAppEvents(events: WindowEvent[]): AppEventGroup[] {
     if (events.length == 0) return [];
-
-    //sort in descending start time
-    events.sort((event_a, event_b) => {
-        return event_b.start_time.diff(event_a.start_time);
-    })
-
-    const groupedEvents: WindowEvent[][] = [];
-    let currGroup: WindowEvent[] = [events[0]];
-    let currGroupType = dateIsFirstHalf(events[0].start_time);
-    for (let i = 1; i < events.length; i++) {
-        if (dateIsFirstHalf(events[i].start_time) == currGroupType) {
-            currGroup.push(events[i]);
+    const groups: AppEventGroup[] = [];
+    let curr_group: AppEventGroup = {
+        app: events[0].data.app,
+        events: [events[0]],
+        ...events[0]
+    };
+    for (let i = 0; i < events.length; i++) {
+        if (events[i].data.app == curr_group.app) {
+            curr_group.events.push(events[i]);
+            curr_group.end_time = events[i].end_time;
+            curr_group.duration = curr_group.start_time.diff(events[i].end_time, "second");
         } else {
-            groupedEvents.push(currGroup);
-            currGroup = [events[i]];
-            currGroupType = dateIsFirstHalf(events[i].start_time)
+            groups.push(curr_group);
+            curr_group = {
+                app: events[i].data.app,
+                events: [events[i]],
+                ...events[i]
+            };
         }
     }
-    groupedEvents.push(currGroup);
-    return groupedEvents;
+    groups.push(curr_group);
+    return groups;
 }
 
 export function useEvents() {
-    const [events, setEvents] = useState<WindowEvent[]>([])
+    const [events, setEvents] = useState<AppEventGroup[]>([])
     useEffect(() => {
         getEvents().then((events) => {
-            setEvents(events);
+            setEvents(mergeSameAppEvents(events));
         })
     }, [])
     return events;
 }
-export function useGroupedEvents() {
-    const [groupedEvents, setGroupedEvents] = useState<WindowEvent[][]>([])
-    useEffect(() => {
-        getEvents().then((events) => {
-            const grouped_events = groupEvents(events);
-            console.log(grouped_events);
-            setGroupedEvents(grouped_events);
-        })
-    }, [])
-    return groupedEvents;
+
+export function formatDuration(duration: number): string {
+    const SECOND = 1;
+    const MINUTE = 60 * SECOND;
+    const HOUR = 60 * MINUTE;
+
+    const hours = Math.floor(duration / HOUR);
+    duration = duration % HOUR;
+    const minutes = Math.floor(duration / MINUTE);
+    duration = duration % MINUTE;
+    const seconds = Math.floor(duration / SECOND);
+
+    const duration_str_builder = [
+        hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''}` : '',
+        minutes > 0 ? `${minutes} minute${minutes > 1 ? 's' : ''}` : '',
+        `${seconds} second${seconds != 1 ? 's' : ''}`,
+    ].filter(part => part !== '');
+
+    const duration_str = duration_str_builder.join(' ');
+    return duration_str;
 }
