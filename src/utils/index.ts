@@ -54,7 +54,7 @@ export type AppEventGroup = {
     events: WindowEvent[];
 }
 
-function mergeSameAppEvents(events: WindowEvent[]): AppEventGroup[] {
+export function mergeSameAppEvents(events: WindowEvent[]): AppEventGroup[] {
     if (events.length == 0) return [];
     const groups: AppEventGroup[] = [];
     let curr_group: AppEventGroup = {
@@ -85,16 +85,6 @@ export function useWindowEvents() {
     useEffect(() => {
         getEvents().then((events) => {
             setEvents(events);
-        })
-    }, [])
-    return events;
-}
-
-export function useAppEvents() {
-    const [events, setEvents] = useState<AppEventGroup[]>([])
-    useEffect(() => {
-        getEvents().then((events) => {
-            setEvents(mergeSameAppEvents(events));
         })
     }, [])
     return events;
