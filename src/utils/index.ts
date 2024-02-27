@@ -80,7 +80,17 @@ function mergeSameAppEvents(events: WindowEvent[]): AppEventGroup[] {
     return groups;
 }
 
-export function useEvents() {
+export function useWindowEvents() {
+    const [events, setEvents] = useState<WindowEvent[]>([])
+    useEffect(() => {
+        getEvents().then((events) => {
+            setEvents(events);
+        })
+    }, [])
+    return events;
+}
+
+export function useAppEvents() {
     const [events, setEvents] = useState<AppEventGroup[]>([])
     useEffect(() => {
         getEvents().then((events) => {
